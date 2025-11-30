@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fund SortToEarn Treasury</title>
+    <script src="https://cdn.ethers.io/lib
+    /ethers-5.7.2.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #35D07F; }
+        button {
+            background: #35D07F;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #2ab86b; }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 6px;
+            background: #e8f5e9;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .info {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        input {
+            padding: 10px;
+            width: 200px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #35D07F;
+            background: #f9f9f9;
+        }
+        .balance {
+            font-size: 24px;
+            font-weight: bold;
+            color: #35D07F;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Fund SortToEarn Treasury</h1>
+        <p>Simple tool to fund your game contracts with cUSD</p>
+
+        <div class="step">
+            <h3>Step 1: Connect Wallet</h3>
+            <button id="connectBtn" onclick="connectWallet()">Connect MetaMask</button>
+            <div id="walletInfo"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Check Balances</h3>
+            <button id="checkBtn" onclick="checkBalances()" disabled>Check Balances</button>
+            <div id="balanceInfo"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Fund Treasuries</h3>
+            <label>Amount (cUSD): </label>
+            <input type="number" id="amount" value="50" min="1" />
+            <br><br>
+            <button id="fundSort" onclick="fundSortToEarn()" disabled>Fund SortToEarn</button>
+            <button id="fundLevel" onclick="fundLevelCreator()" disabled>Fund LevelCreator</button>
+            <br>
+            <button id="fundBoth" onclick="fundBoth()" disabled style="background: #FF6B35;">Fund Both (Recommended)</button>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const ALFAJORES_CHAIN_ID = '0xaef3'; // 44787 in hex
+        const SORTTOEARN_ADDRESS = '0x029dF2c1C69CEFe9Ce762B6a8d3D04b309Fc07D8';
+        const LEVELCREATOR_ADDRESS = '0x7F3974B5503c99A184122a6a4C1CF884F5c64Fb6';
+        const CUSD_ADDRESS = '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1';
+
+        const ERC20_ABI = [
+            'function approve(address spender, uint256 amount) returns (bool)',
+            'function balanceOf(address account) view returns (uint256)',
+            'function allowance(address owner, address spender) view returns (uint256)'
+        ];
+
+        const TREASURY_ABI = [
+            'function fundTreasury(uint256 amount)',
+            'function treasuryBalance() view returns (uint256)'
+        ];
+
+        let provider, signer, account;
+
+        async function connectWallet() {
+            try {
+                if (!window.ethereum) {
+                    showStatus('Please install MetaMask!', 'error');
+                    return;
+                }
+
+                // Request account access
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                account = accounts[0];
+
+                // Check network
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                if (chainId !== ALFAJORES_CHAIN_ID) {
+                    showStatus('Switching to Celo Alfajores...', 'info');
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: ALFAJORES_CHAIN_ID }],
+                        });
+                    } catch (switchError) {
+                        // Chain not added, add it
+                        if (switchError.code === 4902) {
+                            await window.ethereum.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [{
+                                    chainId: ALFAJORES_CHAIN_ID,
+                                    chainName: 'Celo Alfajores Testnet',
+                                    nativeCurrency: {
+                                        name: 'CELO',
+                                        symbol: 'CELO',
+                                        decimals: 18
+                                    },
+                                    rpcUrls: ['https://alfajores-forno.celo-testnet.org'],
+                                    blockExplorerUrls: ['https://alfajores.celoscan.io']
+                                }],
+                            });
+                        } else {
+                            throw switchError;
+                        }
+                    }
+                }
+
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+
+                document.getElementById('walletInfo').innerHTML = `
+                    <div class="status success">
+                        ✅ Connected: ${account.substring(0, 6)}...${account.substring(38)}
+                    </div>
+                `;
+
+                document.getElementById('checkBtn').disabled = false;
+                document.getElementById('connectBtn').textContent = 'Connected ✓';
+                document.getElementById('connectBtn').disabled = true;
+
+                showStatus('Wallet connected! Now check your balances.', 'success');
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function checkBalances() {
+            try {
+                showStatus('Checking balances...', 'info');
+
+                const cusdContract = new ethers.Contract(CUSD_ADDRESS, ERC20_ABI, signer);
+                const sortContract = new ethers.Contract(SORTTOEARN_ADDRESS, TREASURY_ABI, signer);
+                const levelContract = new ethers.Contract(LEVELCREATOR_ADDRESS, TREASURY_ABI, signer);
+
+                const [cusdBalance, sortTreasury, levelTreasury] = await Promise.all([
+                    cusdContract.balanceOf(account),
+                    sortContract.treasuryBalance(),
+                    levelContract.treasuryBalance()
+                ]);
+
+                const cusdBalanceFormatted = ethers.utils.formatEther(cusdBalance);
+                const sortTreasuryFormatted = ethers.utils.formatEther(sortTreasury);
+                const levelTreasuryFormatted = ethers.utils.formatEther(levelTreasury);
+
+                document.getElementById('balanceInfo').innerHTML = `
+                    <div class="status info">
+                        <p><strong>Your cUSD Balance:</strong> <span class="balance">${cusdBalanceFormatted} cUSD</span></p>
+                        <p><strong>SortToEarn Treasury:</strong> ${sortTreasuryFormatted} cUSD</p>
+                        <p><strong>LevelCreator Treasury:</strong> ${levelTreasuryFormatted} cUSD</p>
+                    </div>
+                `;
+
+                if (parseFloat(cusdBalanceFormatted) < 10) {
+                    showStatus('⚠️ Low cUSD balance! Get testnet cUSD from https://faucet.celo.org', 'error');
+                } else {
+                    document.getElementById('fundSort').disabled = false;
+                    document.getElementById('fundLevel').disabled = false;
+                    document.getElementById('fundBoth').disabled = false;
+                    showStatus('Ready to fund! Click a button below.', 'success');
+                }
+            } catch (error) {
+                showStatus('Error checking balances: ' + error.message, 'error');
+            }
+        }
+
+        async function fundSortToEarn() {
+            await fundContract(SORTTOEARN_ADDRESS, 'SortToEarn');
+        }
+
+        async function fundLevelCreator() {
+            await fundContract(LEVELCREATOR_ADDRESS, 'LevelCreator');
+        }
+
+        async function fundBoth() {
+            showStatus('Funding both contracts...', 'info');
+            await fundContract(SORTTOEARN_ADDRESS, 'SortToEarn', true);
+            await fundContract(LEVELCREATOR_ADDRESS, 'LevelCreator', true);
+            showStatus('🎉 Both contracts funded successfully!', 'success');
+            await checkBalances();
+        }
+
+        async function fundContract(contractAddress, contractName, skipRefresh = false) {
+            try {
+                const amount = document.getElementById('amount').value;
+                if (!amount || amount <= 0) {
+                    showStatus('Please enter a valid amount', 'error');
+                    return;
+                }
+
+                const amountWei = ethers.utils.parseEther(amount);
+
+                showStatus(`Step 1/3: Approving ${amount} cUSD for ${contractName}...`, 'info');
+
+                const cusdContract = new ethers.Contract(CUSD_ADDRESS, ERC20_ABI, signer);
+                const approveTx = await cusdContract.approve(contractAddress, amountWei);
+                await approveTx.wait();
+
+                showStatus(`Step 2/3: Funding ${contractName} treasury...`, 'info');
+
+                const treasuryContract = new ethers.Contract(contractAddress, TREASURY_ABI, signer);
+                const fundTx = await treasuryContract.fundTreasury(amountWei);
+                await fundTx.wait();
+
+                if (!skipRefresh) {
+                    showStatus(`✅ ${contractName} funded successfully with ${amount} cUSD!`, 'success');
+                    await checkBalances();
+                }
+            } catch (error) {
+                showStatus(`Error funding ${contractName}: ` + error.message, 'error');
+            }
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        // Handle account changes
+        if (window.ethereum) {
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts.length === 0) {
+                    location.reload();
+                } else {
+                    account = accounts[0];
+                    location.reload();
+                }
+            });
+
+            window.ethereum.on('chainChanged', () => {
+                location.reload();
+            });
+        }
+    </script>
+</body>
+</html>
