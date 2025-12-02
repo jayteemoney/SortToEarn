@@ -1,13 +1,9 @@
 # 🎮 SortToEarn
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Celo](https://img.shields.io/badge/Celo-Alfajores-35D07F)](https://alfajores.celoscan.io)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
-[![Solidity](https://img.shields.io/badge/Solidity-0.8.20-orange)](https://soliditylang.org/)
 
 > **Addictive mobile-first Ball Sort Puzzle on Celo. Tap to pour, solve 200+ levels, earn real cUSD instantly — gasless via MiniPay. Daily challenges, on-chain leaderboard, create & share levels for royalties. Pure P2E fun built for Valora users.**
 
-[🎮 Play Now](https://sorttoearn.vercel.app) | [📹 Demo Video](#) | [📖 Documentation](#)
+
 
 ---
 
@@ -278,45 +274,6 @@ function playCustomLevel(uint256 levelId, uint256 moveCount) external
 - ✅ Input validation on all parameters
 - ✅ SafeERC20 for token transfers
 - ⚠️ **Note**: Testnet contracts - not audited for mainnet
-
----
-
-## 🚢 Deployment Guide
-
-### Deploy to Vercel
-
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
-
-# Set environment variables in Vercel dashboard
-# - VITE_WALLETCONNECT_PROJECT_ID
-# - VITE_SORTTOEARN_CONTRACT
-# - VITE_LEVELCREATOR_CONTRACT
-```
-
-### Deploy Contracts to Mainnet
-
-1. Update `hardhat.config.ts` to include Celo mainnet
-2. Get mainnet CELO from exchange
-3. Update `.env` with mainnet private key
-4. Deploy:
-   ```bash
-   npx hardhat run scripts/deploy.ts --network celo
-   npx hardhat run scripts/verify.ts --network celo
-   ```
-5. Fund treasury with real cUSD
-
----
-
-## 📹 Demo Video Script
-
-See [DEMO_VIDEO_SCRIPT.md](./DEMO_VIDEO_SCRIPT.md) for the complete 3:30 demo guide.
-
----
 
 ## 🏆 Hackathon Submission Checklist
 
