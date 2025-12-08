@@ -35,12 +35,12 @@ export function Profile() {
   }
 
   const stats = {
-    totalEarned: playerStats?.[0] || 0n,
-    levelsCompleted: playerStats?.[1] || 0n,
-    gaslessUsed: playerStats?.[2] || 0n,
-    balance: cusdBalance || 0n,
-    levelsCreated: creatorStats?.[0] || 0n,
-    creatorEarnings: creatorStats?.[1] || 0n,
+    totalEarned: Array.isArray(playerStats) && playerStats.length > 0 ? (playerStats[0] as bigint) : 0n,
+    levelsCompleted: Array.isArray(playerStats) && playerStats.length > 1 ? (playerStats[1] as bigint) : 0n,
+    gaslessUsed: Array.isArray(playerStats) && playerStats.length > 2 ? (playerStats[2] as bigint) : 0n,
+    balance: (cusdBalance as bigint | undefined) || 0n,
+    levelsCreated: Array.isArray(creatorStats) && creatorStats.length > 0 ? (creatorStats[0] as bigint) : 0n,
+    creatorEarnings: Array.isArray(creatorStats) && creatorStats.length > 1 ? (creatorStats[1] as bigint) : 0n,
   };
 
   const handleCopyAddress = () => {

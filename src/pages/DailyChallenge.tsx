@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Calendar, Trophy, Users } from "lucide-react";
 import { getDailyChallengeLevel } from "@/lib/levels";
 import { useSortToEarn } from "@/hooks/useContract";
-import { formatCurrency } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
 import toast from "react-hot-toast";
@@ -14,7 +13,7 @@ import toast from "react-hot-toast";
 export function DailyChallenge() {
   const navigate = useNavigate();
   const { isConnected } = useAccount();
-  const { currentDayId, claimDailyChallenge } = useSortToEarn();
+  const { claimDailyChallenge } = useSortToEarn();
   const [dailyLevel, setDailyLevel] = useState(getDailyChallengeLevel());
   const [hasClaimed, setHasClaimed] = useState(false);
 

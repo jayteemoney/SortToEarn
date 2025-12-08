@@ -10,12 +10,12 @@ import { useAccount } from "wagmi";
 export function Home() {
   const navigate = useNavigate();
   const { playerStats, cusdBalance } = useSortToEarn();
-  const { isConnected, address } = useAccount();
+  const { isConnected } = useAccount();
 
   const stats = {
-    totalEarned: playerStats?.[0] || 0n,
-    levelsCompleted: playerStats?.[1] || 0n,
-    balance: cusdBalance || 0n,
+    totalEarned: Array.isArray(playerStats) && playerStats.length > 0 ? (playerStats[0] as bigint) : 0n,
+    levelsCompleted: Array.isArray(playerStats) && playerStats.length > 1 ? (playerStats[1] as bigint) : 0n,
+    balance: (cusdBalance as bigint | undefined) || 0n,
   };
 
   return (

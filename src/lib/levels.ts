@@ -31,7 +31,7 @@ export const COLORS = [
 function generateLevel(
   id: number,
   numColors: number,
-  tubesPerColor: number = 1,
+  _tubesPerColor: number = 1,
   emptyTubes: number = 2
 ): Level {
   const tubes: number[][] = [];

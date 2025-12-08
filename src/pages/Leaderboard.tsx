@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Trophy, Coins, Medal } from "lucide-react";
 import { motion } from "framer-motion";
-import { formatAddress, formatCurrency } from "@/lib/utils";
+import { formatAddress } from "@/lib/utils";
 
 // Mock leaderboard data - in production, fetch from The Graph or contract events
 const mockLeaderboard = [

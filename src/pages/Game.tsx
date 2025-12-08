@@ -19,7 +19,7 @@ export function Game() {
     navigate(`/play/${levelId}`);
   };
 
-  const handleLevelComplete = (moves: number) => {
+  const handleLevelComplete = (_moves: number) => {
     if (currentLevel) {
       setCompletedLevels((prev) => new Set(prev).add(currentLevel));
     }
